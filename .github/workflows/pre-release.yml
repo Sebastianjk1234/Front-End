@@ -1,11 +1,12 @@
-name: Add release preview comment
+name: Add release
 
 on: 
   pull_request:
+    branches: [master, staging]
   workflow_dispatch:
 
 jobs:
-  release-comment:
+  Pre-Release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -15,9 +16,9 @@ jobs:
         id: semantic_release_info
         uses: fingerprintjs/action-semantic-release-info@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ steps.semantic_release_info.outputs.no_release == 'false' }}
-        name: Add comment to the PR
+          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
+      - if: github.ref == 'refs/heads/master' && steps.semantic_release_info.outputs.no_release == 'false'
+        name: Add comment to the PR for master
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: ReleasePreview
@@ -25,7 +26,16 @@ jobs:
           message: |
             ## This PR will create a ${{steps.semantic_release_info.outputs.type}} release :rocket:
             ${{steps.semantic_release_info.outputs.notes}}
-      - if: ${{ steps.semantic_release_info.outputs.no_release == 'true' }}
+      - if: github.ref == 'refs/heads/staging' && steps.semantic_release_info.outputs.no_release == 'false'
+        name: Add comment to the PR for staging
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ReleasePreview
+          recreate: true
+          message: |
+            ## This PR will create a ${{steps.semantic_release_info.outputs.type}} release :rocket:
+            ${{steps.semantic_release_info.outputs.notes}}
+      - if: steps.semantic_release_info.outputs.no_release == 'true'
         name: Add comment to the PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:
